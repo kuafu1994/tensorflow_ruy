@@ -23,7 +23,7 @@ limitations under the License.
 #define RUY_TEST_LHSSCALAR uint8_t
 #define RUY_TEST_RHSSCALAR uint8_t
 #define RUY_TEST_ACCUMSCALAR int32_t
-#define RUY_TEST_DSTSCALAR int32_t
+#define RUY_TEST_DSTSCALAR uint8_t
 
 namespace ruy {
 
@@ -99,7 +99,6 @@ void Benchmark() {
   // use 1.
   static constexpr int cubic_size_multiplier = 8;
 
-  // if benchmark_cubic == true.
 
 
   if (benchmark_cubic) {
@@ -113,17 +112,33 @@ void Benchmark() {
 
     std::vector<Shape> mobilenetv1;
 
-   // mobilenetv1.push_back(Shape(112 * 112, 32, 3 * 3 * 3));
-   // mobilenetv1.push_back(Shape(56 * 56, 128, 64));
-   // mobilenetv1.push_back(Shape(56 * 56, 128, 128));
+    mobilenetv1.push_back(Shape(112 * 112, 32, 3 * 3 * 3));
+    mobilenetv1.push_back(Shape(56 * 56, 128, 64));
+    mobilenetv1.push_back(Shape(56 * 56, 128, 128));
     mobilenetv1.push_back(Shape(28 * 28, 256, 128));
-   // mobilenetv1.push_back(Shape(28 * 28, 256, 256));
-   // mobilenetv1.push_back(Shape(14 * 14, 512, 256));
-   // mobilenetv1.push_back(Shape(14 * 14, 512, 512));
-   // mobilenetv1.push_back(Shape(7 * 7, 1024, 512));
-   // mobilenetv1.push_back(Shape(7 * 7, 1024, 1024));
+    mobilenetv1.push_back(Shape(28 * 28, 256, 256));
+    mobilenetv1.push_back(Shape(14 * 14, 512, 256));
+    mobilenetv1.push_back(Shape(14 * 14, 512, 512));
+    mobilenetv1.push_back(Shape(7 * 7, 1024, 512));
+    mobilenetv1.push_back(Shape(7 * 7, 1024, 1024));
 
-
+    // Since the
+    std::vector<Shape> vgg16;
+    vgg16.push_back(Shape(224 * 224, 3 * 3 * 64, 64));
+    vgg16.push_back(Shape(224 * 224, 3 * 3 * 64, 128));
+    vgg16.push_back(Shape(112 * 112, 3 * 3 * 128, 128));
+    vgg16.push_back(Shape(112 * 112, 3 * 3 * 128, 256));
+    vgg16.push_back(Shape(56 * 56, 3 * 3 * 256, 256));
+    vgg16.push_back(Shape(56 * 56, 3 * 3 * 256, 256));
+    vgg16.push_back(Shape(56 * 56, 3 * 3 * 256, 512));
+    vgg16.push_back(Shape(28 * 28, 3 * 3 * 512, 512));
+    vgg16.push_back(Shape(28 * 28, 3 * 3 * 512, 512));
+    vgg16.push_back(Shape(28 * 28, 3 * 3 * 512, 512));
+    vgg16.push_back(Shape(28 * 28, 3 * 3 * 512, 512));
+    vgg16.push_back(Shape(14 * 14, 3 * 3 * 512, 512));
+    vgg16.push_back(Shape(14 * 14, 3 * 3 * 512, 512));
+    vgg16.push_back(Shape(14 * 14, 3 * 3 * 512, 512));
+    vgg16.push_back(Shape(14 * 14, 3 * 3 * 512, 512));
 
 #if 0
     std::vector<int> sizes;
@@ -135,7 +150,7 @@ void Benchmark() {
       }
     }
 #endif
-    for (auto & layer : mobilenetv1) {
+    for (auto & layer : vgg16) {
       BenchmarkShape shape;
       shape.rows = layer.rows;
       shape.cols = layer.cols;

@@ -1,0 +1,3 @@
+
+export PERCHANNEL=0
+export PREPACK_RIGHT=1
