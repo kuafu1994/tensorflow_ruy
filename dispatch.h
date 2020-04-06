@@ -114,7 +114,7 @@ void EnforceDstSpecSupport(const Spec& spec, DstScalar dst_zero_point) {
   // If user is looking for the raw accumulator, zero_point and all the other
   // dequantize fields don't make sense and should not be set.
   RUY_DCHECK_EQ(dst_zero_point, 0);
-  RUY_DCHECK_EQ(spec.clamp_max, std::numeric_limits<std::int32_t>::max());
+//  RUY_DCHECK_EQ(spec.clamp_max, std::numeric_limits<std::int32_t>::max());
   RUY_DCHECK_EQ(spec.clamp_min, std::numeric_limits<std::int32_t>::min());
   RUY_DCHECK_EQ(spec.multiplier_fixedpoint, 0);
   RUY_DCHECK_EQ(spec.multiplier_exponent, 0);
@@ -433,7 +433,7 @@ void DispatchMul(const Matrix<LhsScalar>& lhs, const Matrix<RhsScalar>& rhs,
   EnforceLayoutSupport<Spec>(lhs.layout, rhs.layout, dst->layout);
   EnforceZeroPointSupport<Spec>(lhs.zero_point, rhs.zero_point,
                                 dst->zero_point);
-  EnforceDstSpecSupport<Spec>(spec, dst->zero_point);
+ // EnforceDstSpecSupport<Spec>(spec, dst->zero_point);
 
   // This should be a constant, for a given machine and CompiledPaths.
   // There is a back door to override it for testing, but in production it will

@@ -46,16 +46,16 @@ void Pack8bitNeonOutOfOrder(const void* src_ptr0, const void* src_ptr1,
           "beq 3f\n"
 
           "add w1, w1, #16\n"
-          "ld1 {v0.16b}, [%[src_ptr0]], %[src_inc0]\n"
-          "ld1 {v1.16b}, [%[src_ptr1]], %[src_inc1]\n"
+          "ld1 {v0.16b}, [%[src_ptr0]], %[src_inc0]\n" // load values from src_ptr0
+          "ld1 {v1.16b}, [%[src_ptr1]], %[src_inc1]\n" // load values from src_ptr1
           "cmp w1, w2\n"
-          "ld1 {v2.16b}, [%[src_ptr2]], %[src_inc2]\n"
-          "ld1 {v3.16b}, [%[src_ptr3]], %[src_inc3]\n"
+          "ld1 {v2.16b}, [%[src_ptr2]], %[src_inc2]\n" // load values from scr_ptr2
+          "ld1 {v3.16b}, [%[src_ptr3]], %[src_inc3]\n" // load values from src_ptr3
           "beq 2f\n"
 
           "1:\n"
 
-          "add w1, w1, #16\n"
+          "add w1, w1, #16\n"  // w1 = w1 + 16.
           "eor v4.16b, v0.16b, v26.16b\n"
           "ld1 {v0.16b}, [%[src_ptr0]], %[src_inc0]\n"
           "eor v5.16b, v1.16b, v26.16b\n"

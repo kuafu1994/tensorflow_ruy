@@ -18,15 +18,23 @@ limitations under the License.
 #include <string>
 
 #include "test.h"
+#include "im2col.h"
 
 
-#define RUY_TEST_LHSSCALAR uint8_t
-#define RUY_TEST_RHSSCALAR uint8_t
+#define RUY_TEST_LHSSCALAR int8_t
+#define RUY_TEST_RHSSCALAR int8_t
 #define RUY_TEST_ACCUMSCALAR int32_t
-#define RUY_TEST_DSTSCALAR uint8_t
+#define RUY_TEST_DSTSCALAR int32_t
 
 namespace ruy {
 
+    static inline size_t compute_output_dimension(
+            size_t padded_input_dimension,
+            size_t kernel_dimension,
+            size_t stride_dimension
+    ) {
+        return (padded_input_dimension - kernel_dimension) / stride_dimension + 1;
+    }
 using LhsScalar = RUY_TEST_LHSSCALAR;
 using RhsScalar = RUY_TEST_RHSSCALAR;
 using AccumScalar = RUY_TEST_ACCUMSCALAR;
@@ -54,6 +62,24 @@ struct Shape {
   }
 };
 
+// It should be OK now.
+struct ConvP {
+    int input_height;
+    int input_width;
+    int kernel_height;
+    int kernel_width;
+    int stride;
+    int input_channels;
+    int output_channels;
+
+    ConvP(int _ih, int _iw, int _kh, int _kw, int _stride, int _ic, int _oc):
+    input_height(_ih), input_width(_iw), kernel_height(_kh), kernel_width(_kw),
+    stride(_stride), input_channels(_ic), output_channels(_oc)
+    {
+
+    }
+};
+
 template <typename TestSetType>
 std::vector<std::unique_ptr<TestResult<DstScalar>>> BenchmarkRCC(
     const BenchmarkShape& shape) {
@@ -66,8 +92,10 @@ std::vector<std::unique_ptr<TestResult<DstScalar>>> BenchmarkRCC(
   test_set.dst_order = Order::kColMajor; // It is col major
   test_set.layout_style = LayoutStyle::kPackedLinear; // What is kPackedLinear.
   test_set.benchmark = true; // The benchmark is true here.
-  const int asymmetry_lhs = shape.symm_lhs ? 0 : 1; // If shape.symm_lhs is 0, then asymmetry_lhs is 0
-  const int asymmetry_rhs = shape.symm_rhs ? 0 : 1;
+ // const int asymmetry_lhs = shape.symm_lhs ? 0 : 1; // If shape.symm_lhs is 0, then asymmetry_lhs is 0
+  //const int asymmetry_rhs = shape.symm_rhs ? 0 : 1;
+  const int asymmetry_lhs = 1;
+  const int asymmetry_rhs = 1;
   test_set.lhs_zero_point = SymmetricZeroPoint<LhsScalar>() + asymmetry_lhs;
   test_set.rhs_zero_point = SymmetricZeroPoint<RhsScalar>() + asymmetry_rhs;
   test_set.use_specified_zero_points = true; // In the benchmark, we use specified zero points by default.
@@ -83,6 +111,8 @@ std::vector<std::unique_ptr<TestResult<DstScalar>>> BenchmarkRCC(
 
 
 
+
+
 void Benchmark() {
 
     // std::is_float_point checks whether T is a floating-point type.
@@ -93,11 +123,15 @@ void Benchmark() {
                         GetBoolEnvVarOrFalse("SYMM_RHS");
 
   const bool benchmark_cubic = GetBoolEnvVarOrFalse("RUY_BENCHMARK_CUBIC");
+
+  std::vector<ConvP> vgg16;
   std::vector<BenchmarkShape> shapes;
+
+
 
   // Often 8 is used for this multiplier, but to check teeny sizes one can
   // use 1.
-  static constexpr int cubic_size_multiplier = 8;
+  //static constexpr int cubic_size_multiplier = 8;
 
 
 
@@ -110,93 +144,87 @@ void Benchmark() {
 
     //td::map<>
 
-    std::vector<Shape> mobilenetv1;
 
-    mobilenetv1.push_back(Shape(112 * 112, 32, 3 * 3 * 3));
-    mobilenetv1.push_back(Shape(56 * 56, 128, 64));
-    mobilenetv1.push_back(Shape(56 * 56, 128, 128));
-    mobilenetv1.push_back(Shape(28 * 28, 256, 128));
-    mobilenetv1.push_back(Shape(28 * 28, 256, 256));
-    mobilenetv1.push_back(Shape(14 * 14, 512, 256));
-    mobilenetv1.push_back(Shape(14 * 14, 512, 512));
-    mobilenetv1.push_back(Shape(7 * 7, 1024, 512));
-    mobilenetv1.push_back(Shape(7 * 7, 1024, 1024));
+    vgg16.push_back(ConvP(224, 224,  3,  3, 1, 64, 64));
+    vgg16.push_back(ConvP(224, 224,  3,  3, 1, 64, 128));
 
-    // Since the
-    std::vector<Shape> vgg16;
-    vgg16.push_back(Shape(224 * 224, 3 * 3 * 64, 64));
-    vgg16.push_back(Shape(224 * 224, 3 * 3 * 64, 128));
-    vgg16.push_back(Shape(112 * 112, 3 * 3 * 128, 128));
-    vgg16.push_back(Shape(112 * 112, 3 * 3 * 128, 256));
-    vgg16.push_back(Shape(56 * 56, 3 * 3 * 256, 256));
-    vgg16.push_back(Shape(56 * 56, 3 * 3 * 256, 256));
-    vgg16.push_back(Shape(56 * 56, 3 * 3 * 256, 512));
-    vgg16.push_back(Shape(28 * 28, 3 * 3 * 512, 512));
-    vgg16.push_back(Shape(28 * 28, 3 * 3 * 512, 512));
-    vgg16.push_back(Shape(28 * 28, 3 * 3 * 512, 512));
-    vgg16.push_back(Shape(28 * 28, 3 * 3 * 512, 512));
-    vgg16.push_back(Shape(14 * 14, 3 * 3 * 512, 512));
-    vgg16.push_back(Shape(14 * 14, 3 * 3 * 512, 512));
-    vgg16.push_back(Shape(14 * 14, 3 * 3 * 512, 512));
-    vgg16.push_back(Shape(14 * 14, 3 * 3 * 512, 512));
+    vgg16.push_back(ConvP(112, 112,  3,  3, 1, 64, 128));
+    vgg16.push_back(ConvP(112, 112,  3,  3, 1, 128, 256));
 
-#if 0
-    std::vector<int> sizes;
-    for (int i = 2 * cubic_size_multiplier; i <= (512 * cubic_size_multiplier);
-         i *= 2) {
-      sizes.push_back(i);
-      if (i < (512 * cubic_size_multiplier)) {
-        sizes.push_back(i * 3 / 2);
-      }
-    }
-#endif
+    vgg16.push_back(ConvP(56,  56,  3,  3, 1, 256, 256));
+    vgg16.push_back(ConvP(56,  56,  3,  3, 1, 256, 256));
+
+    vgg16.push_back(ConvP(56,  56,  1,  1, 1, 256, 512));
+    vgg16.push_back(ConvP(28,  28,  3,  3, 1, 512, 512));
+
+    vgg16.push_back(ConvP(28,  28,  3,  3, 1, 512, 512));
+    vgg16.push_back(ConvP(28,  28,  3,  3, 1, 512, 512));
+
+    vgg16.push_back(ConvP(28,  28,  3,  3, 1, 512, 512));
+
+    vgg16.push_back(ConvP(14,  14,  3,  3, 1, 512, 512));
+
+    vgg16.push_back(ConvP(14,  14,  3,  3, 1, 512, 512));
+
+    vgg16.push_back(ConvP(14,  14,  3,  3, 1, 512, 512));
+
+    vgg16.push_back(ConvP(14,  14,  3,  3, 1, 512, 512));
+
     for (auto & layer : vgg16) {
+
+        const int padding = layer.kernel_width / 2;
+        const int output_height = compute_output_dimension(padding + layer.input_width + padding, layer.kernel_width, layer.stride);
+        const int output_width = compute_output_dimension(padding + layer.input_height + padding, layer.kernel_height, layer.stride);
+        const int buffer_depth = layer.kernel_width * layer.kernel_height * layer.input_channels;
       BenchmarkShape shape;
-      shape.rows = layer.rows;
-      shape.cols = layer.cols;
-      shape.depth = layer.depth;
+      shape.rows = output_height * output_width;
+      shape.cols = layer.output_channels;
+      shape.depth = buffer_depth;
       shape.symm_lhs = symm_lhs;
       shape.symm_rhs = symm_rhs;
       shapes.push_back(shape);
     }
-  } else {
-    BenchmarkShape shape;
-    shape.rows = GetIntEnvVarOrZero("ROWS");
-    shape.cols = GetIntEnvVarOrZero("COLS");
-    shape.depth = GetIntEnvVarOrZero("DEPTH");
-    if (!shape.rows || !shape.depth || !shape.cols) {
-      fprintf(stderr,
-              "Please specify positive sizes with these env vars: ROWS, DEPTH, "
-              "COLS.\n");
-      exit(1);
-    }
-    shape.symm_lhs = symm_lhs;
-    shape.symm_rhs = symm_rhs;
-    shapes.push_back(shape);
   }
 
   for (int i = 0; i < shapes.size(); i++) {
     const auto& shape = shapes[i];
+
+    const auto& layer = vgg16[i];
+
+    const int padding = layer.kernel_width / 2;
+
+
+      ConvParams conv_params;
+
+      conv_params.stride_height = layer.stride;
+      conv_params.stride_width = layer.stride;
+      conv_params.padding_height = padding;
+      conv_params.padding_width = padding;
+
+
+      RuntimeShape input_shape;
+      input_shape.depth = layer.input_channels;
+      input_shape.height = layer.input_height;
+      input_shape.width = layer.input_width;
+
+
+      const int output_height = compute_output_dimension(padding + layer.input_width + padding, layer.kernel_width, layer.stride);
+      const int output_width = compute_output_dimension(padding + layer.input_height + padding, layer.kernel_height, layer.stride);
+
+      RuntimeShape buffer_shape;
+      buffer_shape.depth = layer.kernel_height * layer.kernel_width * input_shape.depth;
+      buffer_shape.width = output_width;
+      buffer_shape.height = output_height;
+
+
+    // benchmark imcol here
+
+    double im2col_latency = benchmark_im2col(conv_params, layer.kernel_height, layer.kernel_width, input_shape, buffer_shape);
+
     const auto& results = BenchmarkRCC<TestSetType>(shape);
     if (i == 0) {
-#if 0
-      if (benchmark_cubic) {
-        printf("size");
-        for (const auto& result : results) {
-          printf(",%s", PathName(*result).c_str());
-        }
-        printf("\n");
-      } else {
-        printf("path,shape,Gop/s\n");
-      }
-      fflush(stdout);
-#endif
       if(benchmark_cubic){
-          printf("Rows, Depth, Cols");
-
-          for(const auto& result: results){
-              printf(" ,%s", PathName(*result).c_str());
-          }
+          printf("Rows, Depth, Cols, im2col, MM, sum");
           printf("\n");
       } else {
           printf("path,shape,Gop/s\n");
@@ -206,17 +234,13 @@ void Benchmark() {
     if (benchmark_cubic) {
 
       printf("%d, %d, %d", shape.rows, shape.depth, shape.cols);
+      //size_t items = 1 * 2 * shape.rows * shape.depth * shape.cols;
       for (const auto& result : results) {
-        //printf(",%.4g", 2.0e-9 * shape.rows * shape.cols * shape.depth /
+        //printf(",%4g,%.4g", 1.0e3 * result->latency, 2.0e-9 * shape.rows * shape.cols * shape.depth /
         //                    result->latency);
-        printf(",%4g", 1.0e3 * result->latency);
-        if (GetBoolEnvVarOrFalse("RUY_BENCHMARK_PMU")) {
-          printf(",%.3g,%.3g,%.3g,%.3g,%.3g,%.3g,%.3g,%.3g",
-                 result->l1_refill_rate, result->l2_refill_rate,
-                 result->l3_refill_rate, result->l1tlb_refill_rate,
-                 result->l2tlb_refill_rate, result->mispred_rate,
-                 result->frontend_stall_rate, result->backend_stall_rate);
-        }
+        printf(", %f, %f ,%f", 1.0e3 * im2col_latency,
+                1.0e3 * result->latency, 1.0e3*(im2col_latency + result->latency));
+
       }
       printf("\n");
       fflush(stdout);
@@ -241,5 +265,8 @@ void Benchmark() {
 }
 
 }  // namespace ruy
+
+
+
 
 int main() { ruy::Benchmark(); }

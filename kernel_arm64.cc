@@ -129,7 +129,7 @@ void Kernel8bitNeonOutOfOrder(const KernelParams8bit<4, 4>& params) {
   //  |v2.b[0] ... v2.b[15] |  |v18.4s           ...           v30.4s    |
   //  |v3.b[0] ... v3.b[15] |  |v19.4s           ...           v31.4s    |
   //  \---------------------/  \-----------------------------------------/
-  //                                  int32 accumulators 4x4 block
+  //                                  int32accumulators accumulators 4x4 block
   //
   // No attempt had been made so far at implementing the RUY_OPT_MAX_STREAMING
   // optimization for this kernel.
@@ -139,14 +139,14 @@ void Kernel8bitNeonOutOfOrder(const KernelParams8bit<4, 4>& params) {
         // clang-format off
 
         // Load some parameters into registers.
-        "ldr x5, [%[params], #" RUY_STR(RUY_OFFSET_LHS_BASE_PTR) "]\n"
-        "ldr w6, [%[params], #" RUY_STR(RUY_OFFSET_START_ROW) "]\n"
-        "ldr w7, [%[params], #" RUY_STR(RUY_OFFSET_LAST_ROW) "]\n"
-        "ldr w8, [%[params], #" RUY_STR(RUY_OFFSET_LAST_COL) "]\n"
-        "ldr w9, [%[params], #" RUY_STR(RUY_OFFSET_LHS_STRIDE) "]\n"
-        "ldr w10, [%[params], #" RUY_STR(RUY_OFFSET_RHS_STRIDE) "]\n"
-        "ldr w11, [%[params], #" RUY_STR(RUY_OFFSET_DST_STRIDE) "]\n"
-        "ldr w12, [%[params], #" RUY_STR(RUY_OFFSET_DEPTH) "]\n"
+        "ldr x5, [%[params], #" RUY_STR(RUY_OFFSET_LHS_BASE_PTR) "]\n" // x5 = lhs_base_ptr
+        "ldr w6, [%[params], #" RUY_STR(RUY_OFFSET_START_ROW) "]\n"  // w6 = start_row
+        "ldr w7, [%[params], #" RUY_STR(RUY_OFFSET_LAST_ROW) "]\n"  // w7 = last_row
+        "ldr w8, [%[params], #" RUY_STR(RUY_OFFSET_LAST_COL) "]\n"  // w8 = last_col
+        "ldr w9, [%[params], #" RUY_STR(RUY_OFFSET_LHS_STRIDE) "]\n" // w9 = lhs_stride
+        "ldr w10, [%[params], #" RUY_STR(RUY_OFFSET_RHS_STRIDE) "]\n" // w10 = rhs_stride
+        "ldr w11, [%[params], #" RUY_STR(RUY_OFFSET_DST_STRIDE) "]\n" // w11 = dst_stride
+        "ldr w12, [%[params], #" RUY_STR(RUY_OFFSET_DEPTH) "]\n"  // w11 = depth.
 
         // Load the first 64 bytes of LHS and RHS data.
         "ld1 {v0.16b}, [%[lhs_ptr]], #16\n"
