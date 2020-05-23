@@ -8,6 +8,8 @@ include_directories(/home/pfzhang/github/gemmlowp)
 
 add_subdirectory(googletest)
 
+#set(CMAKE_CXX_FLAGS "-march=armv7-a -mfpu=neon -mfloat-abi=hard -marm")
+
 set(SOURCE allocator.cc
         block_map.cc
         blocking_counter.cc
